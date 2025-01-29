@@ -123,10 +123,10 @@ var renderProgram = createShaderProgram(generic_vs_code,
         vec4 outcolor = texelFetch(input_tex0,ivec2(ix,iy),0);
 
 
-        // outcolor.r = log(1.0+sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g)*4.0)*1.0;
-        // outcolor.g = 0.0;
+        outcolor.r = log(1.0+sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g)*4.0)*1.0;
+        outcolor.g = 0.0;
 
-        outcolor.b = -outcolor.r*0.1;
+        // outcolor.b = -outcolor.r*0.1;
 
         FragColor = outcolor;
     }

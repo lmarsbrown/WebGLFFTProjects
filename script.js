@@ -20,12 +20,13 @@ load_img("flatmeower.jpg",(data)=>{
     generateTestImage(originalImage);
     
     fftLaplacian(originalImage,-1);
+    // fftLaplacian(originalImage,1);
 
-    // copy(originalImage,gradX);
-    // copy(originalImage,gradY);
-    // fftGradient(gradX,0);
-    // fftGradient(gradY,1);
-    // combineGradients(gradX,gradY,originalImage)
+    copy(originalImage,gradX);
+    copy(originalImage,gradY);
+    fftGradient(gradX,0);
+    fftGradient(gradY,1);
+    combineGradients(gradX,gradY,originalImage)
 
     // fftLaplacian(originalImage,-1);
     
@@ -297,16 +298,16 @@ var iRoots = new GPUImage(1024,1);
         {
             float intensity = 0.0;
     
-            if(length(v_position-vec2(0.0,0.0)) < 0.0125)
+            if(length(v_position-vec2(0.1,0.0)) < 0.1)
             {
-                intensity = 0.05;
+                intensity = 0.0015;
             }
             if(
-                v_position.x < -0.1 && v_position.x > -0.11 &&
+                v_position.x < -0.1 && v_position.x > -0.15 &&
                 v_position.y < 0.2 && v_position.y > -0.2
             )
             {
-                intensity = -0.01;
+                intensity = -0.003;
             }
 
             if(intensity == 0.0)
@@ -606,7 +607,3 @@ function convolve(input0,input1,output)
     }
     
 }
-
-
-
-

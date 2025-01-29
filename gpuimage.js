@@ -121,8 +121,12 @@ var renderProgram = createShaderProgram(generic_vs_code,
         int iy = int(0.5*(v_position.y+1.0)*float(size.y));
         
         vec4 outcolor = texelFetch(input_tex0,ivec2(ix,iy),0);
-        // outcolor*=4.5;
-        // outcolor+=0.5;
+
+
+        // outcolor.r = log(1.0+sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g)*4.0)*1.0;
+        // outcolor.g = 0.0;
+
+        outcolor.b = -outcolor.r*0.1;
 
         FragColor = outcolor;
     }
@@ -433,13 +437,14 @@ var laplacianProgram = createShaderProgram(generic_vs_code,
             offset = ivec2(-offset.y,offset.x);
         }
 
-        // average -= center;
-        // average.a = 1.0;
+        average -= center;
+        average *= 4.0;
+        average.a = 1.0;
 
-        average += (center - average) * 0.5;
+        // average += (center - average) * 0.5;
 
 
-        FragColor = average*1.0;
+        FragColor = average;
     }
     `
 );

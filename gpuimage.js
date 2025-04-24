@@ -120,11 +120,15 @@ var renderProgram = createShaderProgram(generic_vs_code,
         int ix = int(0.5*(v_position.x+1.0)*float(size.x));
         int iy = int(0.5*(v_position.y+1.0)*float(size.y));
         
-        vec4 outcolor = texelFetch(input_tex0,ivec2(ix,iy),0);
+        vec4 outcolor = texelFetch(input_tex0,ivec2(ix,iy),0)*10.1;
+
+        outcolor.b = -outcolor.r;
+        outcolor.g = 0.0;
+        outcolor.a = 1.0;
 
 
         // outcolor.r = log(1.0+sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g)*4.0)*1.0;
-        outcolor.r = 0.0;
+        // outcolor.r = 0.0;
 
         // outcolor.b = -outcolor.r;
         // outcolor.g = abs(outcolor.g);

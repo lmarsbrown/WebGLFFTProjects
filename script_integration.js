@@ -1,46 +1,70 @@
 const xRes = 1024;
 const yRes = 1024;
 
-let originalImage = new GPUImage(xRes,yRes);
+let chargeDensity = new GPUImage(xRes,yRes);
 
 
 let gradX = new GPUImage(xRes,yRes);
 let gradY = new GPUImage(xRes,yRes);
-originalImage.write();
-originalImage.swapBuffers();
-originalImage.write();
-originalImage.swapBuffers();
+
+let field = new GPUImage(xRes,yRes);
+let display = new GPUImage(xRes,yRes);
+
+chargeDensity.write();
+chargeDensity.swapBuffers();
+chargeDensity.write();
+chargeDensity.swapBuffers();
 
 
 load_img("flatmeower.jpg",(data)=>{
-    console.log(data)
+    // console.log(data)
     // originalImage.writeImage(data);
     // fft(originalImage);
     // flipQuadrants(originalImage)
 
     let startTime = performance.now();
-    generateTestImage(originalImage);
-    fftLaplacian(originalImage,-1);
+    generateTestImage(chargeDensity,0);
+
+    // fft(chargeDensity);
+    // fftLaplacian(chargeDensity,-1);
+    // ifft(chargeDensity);
+
+
+    // generateTestImage(originalImage,1);
+
     
-    for(let i = 0; i < 10; i++)
-    {
-        // generateTestImage(originalImage);
-        // fftLaplacian(originalImage,-1);
-    
-        // copy(originalImage,gradX);
-        // copy(originalImage,gradY);
-        // fftGradient(gradX,0);
-        // fftGradient(gradY,1);
-        // combineGradients(gradX,gradY,originalImage)
-    
-    }
     let endTime = performance.now();
     // fftLaplacian(originalImage,-1);
     
 
 
-    render(originalImage);
 });
+
+function draw()
+{
+    fft(chargeDensity);
+    copy(chargeDensity,gradX);
+    copy(chargeDensity,gradY);
+    fftLaplacian(gradX,-1);
+    fftLaplacian(gradY,-1);
+    fftGradient(gradX,0);
+    fftGradient(gradY,1);
+    ifft(chargeDensity);
+    ifft(gradX);
+    ifft(gradY);
+
+    combineGradients(gradX,gradY,field)
+    constrainedDivergence(chargeDensity,field,chargeDensity);
+
+    copy(chargeDensity,display);
+
+    // fft(display);
+    // fftLaplacian(display,-1);
+    // ifft(display);
+
+    render(display);
+    requestAnimationFrame(draw);
+}
 
 
 var FFTShaderProgram = createShaderProgram(generic_vs_code,loadText("fft.glsl"));
@@ -190,6 +214,90 @@ var iRoots = new GPUImage(xRes,1);
         output.swapBuffers()
     }
 }
+
+// Constrained divergence
+{
+    let constrainedDivergenceProgram = createShaderProgram(generic_vs_code,
+        `#version 300 es
+        precision highp float;
+        in vec2 v_position;
+    
+        uniform sampler2D chargeDensity;
+        uniform sampler2D field;
+        uniform ivec2 size;
+    
+        out vec4 FragColor;
+        
+        void main()
+        {
+            int ix = int(0.5*(v_position.x+1.0)*float(size.x));
+            int iy = int(0.5*(v_position.y+1.0)*float(size.y));
+
+            vec4 chargeDensity = texelFetch(chargeDensity,ivec2(ix,iy),0);
+
+            if(
+                (length(v_position-vec2(0.1,0.0)) < 0.1) || 
+                (v_position.x < -0.1 && v_position.x > -0.35 &&
+                v_position.y < 0.2 && v_position.y > -0.2)
+            )
+            {
+                vec2 offset = vec2(1.0,0.0);
+
+                float divergence = 0.0;
+                for(int i = 0; i < 4; i++)
+                {
+                    vec2 texPos = (2.0*vec2(ivec2(ix,iy)+ivec2(offset))/float(size))-1.0;
+                    if(
+                        ((length(texPos-vec2(0.1,0.0)) < 0.1) || 
+                        (texPos.x < -0.1 && texPos.x > -0.35 &&
+                        texPos.y < 0.2 && texPos.y > -0.2) )
+                    )
+                    {
+                        divergence += dot(-offset, texelFetch(field,ivec2(ix,iy) + ivec2(offset) ,0).xy);
+                    }
+                    else
+                    {
+                        // divergence -= dot(-offset, texelFetch(field,ivec2(ix,iy) + ivec2(offset) ,0).xy);
+                        divergence -= dot(-offset, texelFetch(field,ivec2(ix,iy), 0).xy);
+                    }
+
+                    offset = vec2(-offset.y,offset.x);
+                }
+                chargeDensity.r += divergence/64.0;
+            }
+            FragColor = chargeDensity;
+        }
+        `
+    );
+    
+    gl.useProgram(constrainedDivergenceProgram);
+    gl.uniform1i(gl.getUniformLocation(constrainedDivergenceProgram,"chargeDensity"),0);
+    gl.uniform1i(gl.getUniformLocation(constrainedDivergenceProgram,"field"),1);
+    gl.uniform2i(gl.getUniformLocation(constrainedDivergenceProgram,"size"),can.width,can.height);
+    
+    
+    /**
+     * @param {GPUImage} density
+     * @param {GPUImage} electricField
+     * @param {GPUImage} output
+     */
+    function constrainedDivergence(density,electricField,output)
+    {
+        gl.useProgram(constrainedDivergenceProgram); 
+        gl.viewport(0,0,output.width,output.height)
+    
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D,electricField.frontTex);
+    
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D,density.frontTex);
+    
+        gl.bindFramebuffer(gl.FRAMEBUFFER,output.backFb);
+        gl.drawArrays(gl.TRIANGLES,0,3);
+        output.swapBuffers()
+    }
+}
+
 //Multiply Entrywise
 {
     let multiplyEntrywiseProgram = createShaderProgram(generic_vs_code,
@@ -300,6 +408,7 @@ var iRoots = new GPUImage(xRes,1);
     
         out vec4 FragColor;
         uniform sampler2D input_tex0;
+        uniform int clearBackground;
         
         void main()
         {
@@ -315,17 +424,19 @@ var iRoots = new GPUImage(xRes,1);
 
             if(length(v_position-vec2(0.1,0.0)) < 0.1)
             {
-                intensity = 0.001;
+                // intensity = 0.7;
+                intensity = 0.1;
             }
             if(
-                v_position.x < -0.1 && v_position.x > -0.15 &&
+                v_position.x < -0.1 && v_position.x > -0.35 &&
                 v_position.y < 0.2 && v_position.y > -0.2
             )
             {
-                intensity = -0.0015;
+                // intensity = -0.7;
+                intensity = -0.15;
             }
 
-            if(intensity == 0.0)
+            if((intensity == 0.0 && clearBackground == 0) || (intensity != 0.0 && clearBackground == 1))
             {
                 FragColor = texture(input_tex0,0.5*(v_position+1.0));
             }
@@ -336,11 +447,12 @@ var iRoots = new GPUImage(xRes,1);
         }
         `
     );
+    generateTestImageBackgroundLoc = gl.getUniformLocation(generateTestImageProgram,"clearBackground");
     /**
      * 
      * @param {GPUImage} output
      */
-    function generateTestImage(output)
+    function generateTestImage(output,background)
     {
         gl.useProgram(generateTestImageProgram); 
         gl.viewport(0,0,output.width,output.height);
@@ -348,6 +460,7 @@ var iRoots = new GPUImage(xRes,1);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D,output.frontTex);
         gl.bindFramebuffer(gl.FRAMEBUFFER,output.backFb);
+        gl.uniform1i(generateTestImageBackgroundLoc,background);
     
         gl.drawArrays(gl.TRIANGLES,0,3);
         output.swapBuffers()
@@ -487,7 +600,7 @@ function convolve(input0,input1,output)
      */
     function fftLaplacian(input,direction)
     {
-        fft(input);
+        // fft(input);
         gl.useProgram(fftLaplacianProgram); 
         gl.viewport(0,0,input.width,input.height)
        
@@ -502,7 +615,7 @@ function convolve(input0,input1,output)
         input.swapBuffers()
 
 
-        ifft(input);
+        // ifft(input);
     }
     
 }
@@ -565,7 +678,7 @@ function convolve(input0,input1,output)
      */
     function fftGradient(input,direction)
     {
-        fft(input);
+        // fft(input);
         gl.useProgram(fftGradientProgram); 
         gl.viewport(0,0,input.width,input.height)
        
@@ -580,7 +693,7 @@ function convolve(input0,input1,output)
         input.swapBuffers()
 
 
-        ifft(input);
+        // ifft(input);
     }
     
 }

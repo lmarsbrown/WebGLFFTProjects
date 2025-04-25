@@ -1,5 +1,5 @@
-const xRes = 1024;
-const yRes = 1024;
+const xRes = 512;
+const yRes = 512;
 
 let waveFreqs = new GPUImage(xRes,yRes);
 let display = new GPUImage(xRes,yRes);
@@ -19,7 +19,7 @@ load_img("flatmeower.jpg",(data)=>{
     let startTime = performance.now();
     generateTestImage(waveFreqs,0);
     fft(waveFreqs);
-    // fftWaveStep(waveFreqs,100.0);
+    fftWaveStep(waveFreqs,5.0);
     // for(let i = 0; )
 
 
@@ -39,7 +39,7 @@ load_img("flatmeower.jpg",(data)=>{
 
 function draw()
 {
-    for(let i = 0; i < 4; i++)
+    for(let i = 0; i < 1; i++)
     {
         fftWaveStep(waveFreqs,0.0);
         copy(waveFreqs,display)
@@ -330,7 +330,7 @@ var iRoots = new GPUImage(xRes,1);
             if(length(v_position-vec2(0.596284794,0.0)) < 0.01)
             {
                 // intensity = 0.7;
-                intensity = 1.3;
+                intensity = 4.3;
             }
             if(
                 v_position.x < -0.1 && v_position.x > -0.35 &&
@@ -413,13 +413,34 @@ var iRoots = new GPUImage(xRes,1);
             }
 
             if(
-                length(vec2(v_position.x,v_position.y*1.5)) > 0.8
+                (v_position.x < -0.3 && v_position.x > -0.45 )&&
+                (abs(v_position.y+0.1) > 0.01)&&
+                (abs(v_position.y-0.1) > 0.01)
             )
             {
                 intensity.x = 0.0;
                 intensity.y = 0.0;
                 intensity.z = 1.0;
             }
+
+            if(
+                (v_position.x < 0.38 && v_position.x > 0.31 )&&
+                (abs(v_position.y) > 0.01)
+            )
+            {
+                intensity.x = 0.0;
+                intensity.y = 0.0;
+                intensity.z = 1.0;
+            }
+
+            // if(
+            //     length(vec2(v_position.x,v_position.y*1.5)) > 0.8
+            // )
+            // {
+            //     intensity.x = 0.0;
+            //     intensity.y = 0.0;
+            //     intensity.z = 1.0;
+            // }
 
             FragColor = intensity;
         }
@@ -551,8 +572,8 @@ function convolve(input0,input1,output)
             float freqMag = sqrt(freqX*freqX+freqY*freqY);
 
             vec2 phasor = vec2(
-                cos(freqMag*1.0),
-                sin(freqMag*1.0)
+                cos(freqMag*4.0),
+                sin(freqMag*4.0)
             ) * exp(-freqMag*blurMag);
 
 

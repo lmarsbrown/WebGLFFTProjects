@@ -94,8 +94,8 @@ class GPUImage
 }
 
 let can = document.createElement("canvas");
-can.width = 1024;
-can.height = 1024;
+can.width = 512;
+can.height = 512;
 document.body.appendChild(can);
 
 

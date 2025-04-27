@@ -1,5 +1,5 @@
-const xRes = 512;
-const yRes = 512;
+const xRes = 1024;
+const yRes = 1024;
 
 let waveFreqs = new GPUImage(xRes,yRes);
 let display = new GPUImage(xRes,yRes);
@@ -19,7 +19,9 @@ load_img("flatmeower.jpg",(data)=>{
     let startTime = performance.now();
     generateTestImage(waveFreqs,0);
     fft(waveFreqs);
-    fftWaveStep(waveFreqs,5.0);
+    // fftWaveStep(waveFreqs,100.0);
+
+
     // for(let i = 0; )
 
 
@@ -39,7 +41,7 @@ load_img("flatmeower.jpg",(data)=>{
 
 function draw()
 {
-    for(let i = 0; i < 1; i++)
+    for(let i = 0; i < 2; i++)
     {
         fftWaveStep(waveFreqs,0.0);
         copy(waveFreqs,display)
@@ -317,7 +319,7 @@ var iRoots = new GPUImage(xRes,1);
         
         void main()
         {
-            float intensity = 0.0;
+            vec2 intensity = vec2(0.0,0.0);
     
             // if(
             //     v_position.x > -1.0/${xRes}.0 && v_position.x < 1.0/${xRes}.0 &&
@@ -330,8 +332,18 @@ var iRoots = new GPUImage(xRes,1);
             if(length(v_position-vec2(0.596284794,0.0)) < 0.01)
             {
                 // intensity = 0.7;
-                intensity = 4.3;
+                // intensity = 0.3;
             }
+
+            float shift = 0.6;
+            float rad = sqrt((v_position.x-shift)*(v_position.x-shift)+v_position.y*v_position.y);
+            float xPos = v_position.x*1.1+v_position.y*0.0;
+            intensity = vec2(sin(-400.0*3.1415926535*xPos),cos(400.0*3.1415926535*xPos))*0.1;
+            // intensity += vec2(sin(-100.0*3.1415926535*v_position.x),cos(100.0*3.1415926535*v_position.x))*0.3;
+            // intensity += vec2(sin(-25.0*3.1415926535*v_position.x),cos(25.0*3.1415926535*v_position.x))*0.3;
+            // intensity += vec2(sin(-25.0*3.1415926535*v_position.x),cos(25.0*3.1415926535*v_position.x))*0.3;
+            intensity *= exp(-2000.0*((v_position.x-shift)*(v_position.x-shift)+v_position.y*v_position.y));
+
             if(
                 v_position.x < -0.1 && v_position.x > -0.35 &&
                 v_position.y < 0.2 && v_position.y > -0.2
@@ -341,14 +353,15 @@ var iRoots = new GPUImage(xRes,1);
                 // intensity = -0.15;
             }
 
-            if((intensity == 0.0 && clearBackground == 0) || (intensity != 0.0 && clearBackground == 1))
-            {
-                FragColor = texture(input_tex0,0.5*(v_position+1.0));
-            }
-            else
-            {
-                FragColor = vec4(intensity,0.0,0.0,1.0);
-            }
+            // if((intensity == 0.0 && clearBackground == 0) || (intensity != 0.0 && clearBackground == 1))
+            // {
+            //     FragColor = texture(input_tex0,0.5*(v_position+1.0));
+            // }
+            // else
+            // {
+            //     FragColor = vec4(intensity,0.0,1.0);
+            // }
+            FragColor = vec4(intensity,0.0,1.0);
         }
         `
     );
@@ -395,12 +408,12 @@ var iRoots = new GPUImage(xRes,1);
             //     intensity = 1.0;
             // }
 
-            if(length(v_position-vec2(-0.3,0.0)) < 0.1)
-            {
-                // intensity.x = 0.0;
-                // intensity.y = 0.0;
-                // intensity.z = 1.0;
-            }
+            // if(length(v_position-vec2(0.0,0.0)) < 0.12)
+            // {
+            //     intensity.x = 0.0;
+            //     intensity.y = 0.0;
+            //     intensity.z = 1.0;
+            // }
 
             if(
                 (v_position.x < -0.9 || v_position.x > 0.9 )||
@@ -412,10 +425,11 @@ var iRoots = new GPUImage(xRes,1);
                 intensity.z = 1.0;
             }
 
+
             if(
-                (v_position.x < -0.3 && v_position.x > -0.45 )&&
-                (abs(v_position.y+0.1) > 0.01)&&
-                (abs(v_position.y-0.1) > 0.01)
+                (v_position.x < 0.025 && v_position.x > -0.005 )&&
+                (abs(v_position.y+0.03) > 0.01)&&
+                (abs(v_position.y-0.03) > 0.01)
             )
             {
                 intensity.x = 0.0;
@@ -423,15 +437,26 @@ var iRoots = new GPUImage(xRes,1);
                 intensity.z = 1.0;
             }
 
-            if(
-                (v_position.x < 0.38 && v_position.x > 0.31 )&&
-                (abs(v_position.y) > 0.01)
-            )
-            {
-                intensity.x = 0.0;
-                intensity.y = 0.0;
-                intensity.z = 1.0;
-            }
+            // if(
+            //     (v_position.x < -0.03 && v_position.x > -0.05 )&&
+                // (abs(v_position.y+0.1) > 0.01)&&
+                // (abs(v_position.y-0.1) > 0.01)
+            // )
+            // {
+            //     intensity.x = 0.0;
+            //     intensity.y = 0.0;
+            //     intensity.z = 1.0;
+            // }
+
+            // if(
+            //     (v_position.x < 0.38 && v_position.x > 0.31 )&&
+            //     (abs(v_position.y) > 0.01)
+            // )
+            // {
+            //     intensity.x = 0.0;
+            //     intensity.y = 0.0;
+            //     intensity.z = 1.0;
+            // }
 
             // if(
             //     length(vec2(v_position.x,v_position.y*1.5)) > 0.8
@@ -569,11 +594,11 @@ function convolve(input0,input1,output)
             freqX /= float(size.x);
             freqY /= float(size.y);
 
-            float freqMag = sqrt(freqX*freqX+freqY*freqY);
+            float freqMag = (freqX*freqX+freqY*freqY);
 
             vec2 phasor = vec2(
-                cos(freqMag*4.0),
-                sin(freqMag*4.0)
+                cos(freqMag*8.0),
+                sin(freqMag*8.0)
             ) * exp(-freqMag*blurMag);
 
 

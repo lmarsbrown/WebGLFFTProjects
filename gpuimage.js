@@ -123,14 +123,19 @@ var renderProgram = createShaderProgram(generic_vs_code,
         vec4 outcolor = texelFetch(input_tex0,ivec2(ix,iy),0)*10.1;
 
         float intensity = log(abs(8.0*sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g))+1.0);
+        // float intensity = log(abs(8.0*outcolor.r)+1.0);
 
-        outcolor.r  = intensity;//sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g);
         
         outcolor.g = outcolor.b*0.1;
-        outcolor.b = 0.0;
+        outcolor.r = -outcolor.b*0.1;
+        outcolor.b  = intensity;//sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g);
+
+
+        // outcolor.b = 0.0;
 
         // outcolor.b = -intensity*sign(outcolor.r);
         // outcolor.r = intensity*sign(outcolor.r);
+        
         // outcolor.g = abs(outcolor.g);
         outcolor.a = 1.0;
 

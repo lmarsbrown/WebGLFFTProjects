@@ -19,7 +19,7 @@ load_img("flatmeower.jpg",(data)=>{
     let startTime = performance.now();
     generateTestImage(waveFreqs,0);
     fft(waveFreqs);
-    // fftWaveStep(waveFreqs,100.0);
+    fftWaveStep(waveFreqs,25.0);
 
 
     // for(let i = 0; )
@@ -332,17 +332,20 @@ var iRoots = new GPUImage(xRes,1);
             if(length(v_position-vec2(0.596284794,0.0)) < 0.01)
             {
                 // intensity = 0.7;
-                // intensity = 0.3;
+                // intensity.x = 1.3;
             }
 
-            float shift = 0.6;
-            float rad = sqrt((v_position.x-shift)*(v_position.x-shift)+v_position.y*v_position.y);
+            float shift = -0.0;
+            float yshift = -0.3;
+            float rad = sqrt((v_position.x-shift)*(v_position.x-shift)+(v_position.y+yshift)*(v_position.y+yshift));
             float xPos = v_position.x*1.1+v_position.y*0.0;
-            intensity = vec2(sin(-400.0*3.1415926535*xPos),cos(400.0*3.1415926535*xPos))*0.1;
+
+            intensity = vec2(sin(-200.0*3.1415926535*xPos),cos(200.0*3.1415926535*xPos))*0.4;
+
             // intensity += vec2(sin(-100.0*3.1415926535*v_position.x),cos(100.0*3.1415926535*v_position.x))*0.3;
             // intensity += vec2(sin(-25.0*3.1415926535*v_position.x),cos(25.0*3.1415926535*v_position.x))*0.3;
             // intensity += vec2(sin(-25.0*3.1415926535*v_position.x),cos(25.0*3.1415926535*v_position.x))*0.3;
-            intensity *= exp(-2000.0*((v_position.x-shift)*(v_position.x-shift)+v_position.y*v_position.y));
+            intensity *= exp(-2000.0*rad*rad);
 
             if(
                 v_position.x < -0.1 && v_position.x > -0.35 &&
@@ -399,6 +402,7 @@ var iRoots = new GPUImage(xRes,1);
         void main()
         {
             vec4 intensity = texture(input_tex0,0.5*(v_position+1.0));;
+            float phaseShift = 0.0;
     
             // if(
             //     v_position.x > -1.0/${xRes}.0 && v_position.x < 1.0/${xRes}.0 &&
@@ -420,9 +424,9 @@ var iRoots = new GPUImage(xRes,1);
                 (v_position.y < -0.9 || v_position.y > 0.9 )
             )
             {
-                intensity.x = 0.0;
-                intensity.y = 0.0;
-                intensity.z = 1.0;
+                // intensity.x = 0.0;
+                // intensity.y = 0.0;
+                // intensity.z = 1.0;
             }
 
 
@@ -432,9 +436,10 @@ var iRoots = new GPUImage(xRes,1);
                 (abs(v_position.y-0.03) > 0.01)
             )
             {
-                intensity.x = 0.0;
-                intensity.y = 0.0;
-                intensity.z = 1.0;
+                // intensity.x = 0.0;
+                // intensity.y = 0.0;
+                // intensity.z = 1.0;
+                // phaseShift = 1.0;
             }
 
             // if(
@@ -458,14 +463,54 @@ var iRoots = new GPUImage(xRes,1);
             //     intensity.z = 1.0;
             // }
 
-            // if(
-            //     length(vec2(v_position.x,v_position.y*1.5)) > 0.8
-            // )
+            if(
+                length(vec2(v_position.x,v_position.y*1.5)) > 0.8
+            )
+            {
+                // intensity.x = 0.0;
+                // intensity.y = 0.0;
+                // intensity.z = 1.0;
+                // phaseShift = (length(vec2(v_position.x,v_position.y*1.5))-0.8)*1.0;
+            }
+
+            if(length(vec2(v_position.x,v_position.y)) < 0.2)
+            {
+                // phaseShift += (length(vec2(v_position.x,v_position.y))-0.2)*5.0;
+            }
+
+            phaseShift = - 0.1 / (0.1 + 1.0*(dot(v_position,v_position) ));
+            // phaseShift += 2.0 / (1.0 + 700.0*dot(v_position,v_position) );
+
+            // phaseShift = abs(v_position.x+v_position.y)+abs(v_position.x-v_position.y);
+
+
+            // phaseShift = (v_position.x*v_position.x + v_position.y * v_position.y-0.4)*5.0;
+
+            // phaseShift = max(min(phaseShift,10.1),0.0);
+            // phaseShift -= 1.0/(1.0+exp(-(intensity.x*intensity.x+intensity.y*intensity.y)*1.7));
+
+            // if(phaseShift>0.5)
             // {
-            //     intensity.x = 0.0;
-            //     intensity.y = 0.0;
-            //     intensity.z = 1.0;
+            //     phaseShift = 1.0;
             // }
+            // else
+            // {
+            //     phaseShift = 0.0;
+            // }
+            
+            intensity.z = phaseShift/1.0;
+
+            vec2 phasor = vec2(
+                cos(phaseShift*1.0),
+                sin(phaseShift*1.0)
+            );
+            
+            vec2 outVal = vec2(
+                intensity.x * phasor.x - intensity.y * phasor.y,
+                intensity.y * phasor.x + intensity.x * phasor.y
+            );
+            intensity.x = outVal.x;
+            intensity.y = outVal.y;
 
             FragColor = intensity;
         }

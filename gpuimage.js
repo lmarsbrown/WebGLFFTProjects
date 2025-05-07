@@ -126,8 +126,8 @@ var renderProgram = createShaderProgram(generic_vs_code,
         // float intensity = log(abs(8.0*outcolor.r)+1.0);
 
         
-        outcolor.g = outcolor.b*0.1;
-        outcolor.r = -outcolor.b*0.1;
+        outcolor.g = outcolor.b;
+        outcolor.r = -outcolor.b*0.05;
         outcolor.b  = intensity;//sqrt(outcolor.r*outcolor.r+outcolor.g*outcolor.g);
 
 
